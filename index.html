@@ -1,9 +1,2320 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My React App</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient Readmission Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1e3a5f;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --accent3: #10b981;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --font-head: 'DM Serif Display', serif;
+      --font-body: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── BG GRID ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: relative;
+      padding: 48px 60px 36px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+    .logo-group { display: flex; align-items: center; gap: 16px; }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-radius: 14px;
+      display: grid; place-items: center;
+      font-size: 26px;
+    }
+    .logo-text h1 {
+      font-family: var(--font-head);
+      font-size: 1.8rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo-text p { font-size: 0.78rem; color: var(--muted); font-family: var(--font-mono); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+    .header-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,229,255,0.06);
+      border: 1px solid rgba(0,229,255,0.2);
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 0.76rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+    .pulse { width: 8px; height: 8px; background: var(--accent3); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+    /* ─── LAYOUT ─── */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px 60px 80px;
+      position: relative; z-index: 10;
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 32px;
+      margin-top: 8px;
+    }
+
+    /* ─── SECTION TITLE ─── */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 30px;
+      transition: border-color .3s;
+    }
+    .card:hover { border-color: rgba(0,229,255,0.25); }
+
+    /* ─── FORM ─── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group.full { grid-column: 1/-1; }
+    label {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    input, select, textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color .25s, box-shadow .25s;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+    }
+    select option { background: var(--surface2); }
+
+    /* ─── RANGE SLIDER ─── */
+    .range-wrap { display: flex; align-items: center; gap: 14px; }
+    input[type="range"] {
+      flex:1; height: 4px; padding:0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .range-val {
+      min-width: 44px;
+      text-align: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    /* ─── TOGGLE CHIPS ─── */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      padding: 7px 16px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all .2s;
+      user-select: none;
+    }
+    .chip.active {
+      border-color: var(--accent2);
+      background: rgba(124,58,237,0.18);
+      color: #c4b5fd;
+    }
+
+    /* ─── PREDICT BUTTON ─── */
+    .btn-predict {
+      width: 100%;
+      margin-top: 24px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(124,58,237,0.4); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict .shimmer {
+      position: absolute; top:0; left:-60%;
+      width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer { to{left:120%} }
+    .btn-predict.loading { opacity: .7; cursor: not-allowed; }
+
+    /* ─── RIGHT PANEL ─── */
+    .result-panel { display: flex; flex-direction: column; gap: 24px; }
+
+    /* ─── RISK METER ─── */
+    .risk-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .risk-card::before {
+      content:'';
+      position:absolute;
+      top:-80px; left:50%; transform:translateX(-50%);
+      width:260px; height:260px;
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(0,229,255,0.06), transparent 70%);
+      pointer-events:none;
+    }
+    .risk-label { font-family: var(--font-mono); font-size:.72rem; color:var(--muted); letter-spacing:3px; text-transform:uppercase; }
+    .risk-score {
+      font-family: var(--font-head);
+      font-size: 5rem;
+      line-height: 1;
+      margin: 14px 0 8px;
+      transition: all .6s ease;
+    }
+    .risk-tier {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      font-weight: 500;
+    }
+    .tier-low  { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--accent3); }
+    .tier-med  { background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:var(--warn); }
+    .tier-high { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+
+    /* Arc meter */
+    .arc-wrap { position: relative; width: 200px; height: 110px; margin: 0 auto 16px; }
+    .arc-wrap svg { overflow: visible; }
+    #arc-fill { transition: stroke-dashoffset .8s cubic-bezier(.4,0,.2,1), stroke .5s; }
+
+    /* ─── GAUGE BARS ─── */
+    .factor-list { display: flex; flex-direction: column; gap: 14px; }
+    .factor {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .factor-head { display: flex; justify-content: space-between; align-items: center; }
+    .factor-name { font-size: .82rem; color: var(--text); }
+    .factor-val  { font-size: .78rem; font-family: var(--font-mono); color: var(--muted); }
+    .bar-track {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      width: 0;
+      transition: width .8s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ─── RECOMMENDATIONS ─── */
+    .rec-list { display: flex; flex-direction: column; gap: 10px; }
+    .rec-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: .84rem;
+      line-height: 1.5;
+      animation: fadeUp .4s ease both;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+    .rec-icon { font-size: 1.1rem; flex-shrink:0; margin-top:1px; }
+
+    /* ─── HISTORY TABLE ─── */
+    .history-wrap { overflow-x: auto; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(30,58,95,.4);
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(0,229,255,.03); }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: .72rem;
+      font-family: var(--font-mono);
+    }
+
+    /* ─── EMPTY STATE ─── */
+    .empty {
+      text-align:center;
+      padding: 48px 20px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .empty .icon { font-size: 2.5rem; margin-bottom: 12px; opacity: .4; }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: .85rem;
+      z-index: 999;
+      display: flex; align-items: center; gap: 10px;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    .toast.show { transform: none; opacity: 1; }
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width:900px){
+      header { padding:28px 24px 24px; flex-direction:column; gap:16px; }
+      .container { padding:28px 20px 60px; }
+      .grid-main { grid-template-columns:1fr; }
+      .form-grid { grid-template-columns:1fr; }
+    }
+  </style>
 </head>
 <body>
-  <div id="root"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-group">
+    <div class="logo-icon">🫀</div>
+    <div class="logo-text">
+      <h1>ReadmitRisk</h1>
+      <p>Patient Readmission Intelligence</p>
+    </div>
+  </div>
+  <div class="header-badge">
+    <span class="pulse"></span> Clinical Decision Support · v2.4
+  </div>
+</header>
+
+<div class="container">
+  <div class="grid-main">
+
+    <!-- LEFT: FORM -->
+    <div>
+      <div class="section-label">Patient Profile</div>
+      <div class="card">
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Patient ID</label>
+            <input type="text" id="pid" placeholder="e.g. PT-20480" />
+          </div>
+
+          <div class="form-group">
+            <label>Age</label>
+            <div class="range-wrap">
+              <input type="range" id="age" min="1" max="100" value="55" oninput="document.getElementById('age-val').textContent=this.value"/>
+              <span class="range-val" id="age-val">55</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Gender</label>
+            <select id="gender">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other / Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Primary Diagnosis</label>
+            <select id="diagnosis">
+              <option value="heart_failure">Heart Failure</option>
+              <option value="pneumonia">Pneumonia</option>
+              <option value="copd">COPD</option>
+              <option value="diabetes">Diabetes</option>
+              <option value="stroke">Stroke</option>
+              <option value="sepsis">Sepsis</option>
+              <option value="hip_fracture">Hip Fracture</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Length of Stay (days)</label>
+            <div class="range-wrap">
+              <input type="range" id="los" min="1" max="60" value="5" oninput="document.getElementById('los-val').textContent=this.value"/>
+              <span class="range-val" id="los-val">5</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Prior Admissions (12 months)</label>
+            <div class="range-wrap">
+              <input type="range" id="prior" min="0" max="10" value="1" oninput="document.getElementById('prior-val').textContent=this.value"/>
+              <span class="range-val" id="prior-val">1</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Discharge Disposition</label>
+            <select id="disposition">
+              <option value="home">Home</option>
+              <option value="home_health">Home w/ Health Services</option>
+              <option value="snf">Skilled Nursing Facility</option>
+              <option value="rehab">Inpatient Rehab</option>
+              <option value="ltc">Long-Term Care</option>
+              <option value="ama">AMA / Left Against Advice</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Insurance Type</label>
+            <select id="insurance">
+              <option value="medicare">Medicare</option>
+              <option value="medicaid">Medicaid</option>
+              <option value="private">Private / Commercial</option>
+              <option value="uninsured">Uninsured</option>
+            </select>
+          </div>
+
+          <div class="form-group full">
+            <label>Comorbidities (select all that apply)</label>
+            <div class="chip-group" id="comorbidities">
+              <span class="chip" data-val="hypertension">Hypertension</span>
+              <span class="chip" data-val="diabetes">Diabetes</span>
+              <span class="chip" data-val="ckd">CKD</span>
+              <span class="chip" data-val="chf">CHF</span>
+              <span class="chip" data-val="afib">A-Fib</span>
+              <span class="chip" data-val="obesity">Obesity</span>
+              <span class="chip" data-val="depression">Depression</span>
+              <span class="chip" data-val="cancer">Cancer</span>
+              <span class="chip" data-val="liver">Liver Disease</span>
+              <span class="chip" data-val="dementia">Dementia</span>
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label>Social Risk Factors</label>
+            <div class="chip-group" id="social">
+              <span class="chip" data-val="lives_alone">Lives Alone</span>
+              <span class="chip" data-val="low_literacy">Low Health Literacy</span>
+              <span class="chip" data-val="transport">Transportation Issues</span>
+              <span class="chip" data-val="food">Food Insecurity</span>
+              <span class="chip" data-val="homeless">Housing Instability</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Medication Adherence</label>
+            <select id="adherence">
+              <option value="high">High (≥80%)</option>
+              <option value="medium">Medium (50–79%)</option>
+              <option value="low">Low (&lt;50%)</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Follow-up Appt Scheduled?</label>
+            <select id="followup">
+              <option value="yes_7">Yes, within 7 days</option>
+              <option value="yes_30">Yes, 8–30 days</option>
+              <option value="no">No</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+        </div>
+
+        <button class="btn-predict" id="predictBtn" onclick="runPrediction()">
+          <span class="shimmer"></span>
+          ⚡ Run Readmission Prediction
+        </button>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="section-label" style="margin-top:36px">Prediction History</div>
+      <div class="card">
+        <div class="history-wrap">
+          <table id="historyTable">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Diagnosis</th>
+                <th>Risk Score</th>
+                <th>Tier</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="5"><div class="empty"><div class="icon">📋</div>No predictions yet</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div class="result-panel">
+
+      <!-- RISK METER -->
+      <div class="section-label">Risk Assessment</div>
+      <div class="risk-card">
+        <div class="risk-label">30-Day Readmission Risk</div>
+
+        <!-- Arc SVG -->
+        <div class="arc-wrap">
+          <svg viewBox="0 0 200 110" width="200" height="110">
+            <defs>
+              <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#10b981"/>
+                <stop offset="50%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#ef4444"/>
+              </linearGradient>
+            </defs>
+            <!-- Track -->
+            <path d="M 15 105 A 85 85 0 0 1 185 105"
+              fill="none" stroke="#1a2236" stroke-width="14" stroke-linecap="round"/>
+            <!-- Fill -->
+            <path id="arc-fill"
+              d="M 15 105 A 85 85 0 0 1 185 105"
+              fill="none" stroke="url(#arcGrad)" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="267" stroke-dashoffset="267"/>
+            <!-- Needle -->
+            <line id="needle" x1="100" y1="105" x2="100" y2="30"
+              stroke="white" stroke-width="2.5" stroke-linecap="round"
+              transform="rotate(0 100 105)" style="transition: transform .8s cubic-bezier(.4,0,.2,1)"/>
+            <circle cx="100" cy="105" r="6" fill="white"/>
+          </svg>
+        </div>
+
+        <div class="risk-score" id="riskScore">—</div>
+        <div id="riskTier" class="risk-tier tier-low" style="visibility:hidden">● Low Risk</div>
+      </div>
+
+      <!-- FACTOR BREAKDOWN -->
+      <div class="card">
+        <div class="section-label" style="margin-bottom:18px">Risk Factor Breakdown</div>
+        <div class="factor-list" id="factorList">
+          <div class="empty"><div class="icon">📊</div>Submit a patient profile to see factors</div>
+        </div>
+      </div>
+
+      <!-- RECOMMENDATIONS -->
+      <div class="card">
+        <div class="section-label" style="margin-bottom:18px">Clinical Recommendations</div>
+        <div class="rec-list" id="recList">
+          <div class="empty"><div class="icon">💡</div>Recommendations will appear here</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✅ Prediction complete</div>
+
+<script>
+// ─── CHIP TOGGLE ───
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', () => c.classList.toggle('active'));
+});
+
+// ─── HELPERS ───
+function getActiveChips(groupId) {
+  return [...document.querySelectorAll(`#${groupId} .chip.active`)].map(c => c.dataset.val);
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── PREDICTION ENGINE ───
+function computeRisk() {
+  let score = 0;
+
+  // Age
+  const age = +document.getElementById('age').value;
+  if (age >= 80) score += 18;
+  else if (age >= 65) score += 12;
+  else if (age >= 50) score += 6;
+
+  // Diagnosis
+  const dx = { heart_failure:20, sepsis:18, copd:15, pneumonia:14, diabetes:10, stroke:13, hip_fracture:11, other:5 };
+  score += dx[document.getElementById('diagnosis').value] || 5;
+
+  // LOS
+  const los = +document.getElementById('los').value;
+  if (los >= 14) score += 16;
+  else if (los >= 7) score += 10;
+  else if (los >= 3) score += 5;
+
+  // Prior admissions
+  const prior = +document.getElementById('prior').value;
+  score += Math.min(prior * 6, 24);
+
+  // Disposition
+  const disp = { ama:18, home:2, home_health:6, snf:10, rehab:8, ltc:12 };
+  score += disp[document.getElementById('disposition').value] || 2;
+
+  // Insurance
+  const ins = { uninsured:10, medicaid:8, medicare:4, private:1 };
+  score += ins[document.getElementById('insurance').value] || 1;
+
+  // Comorbidities
+  const comorbs = getActiveChips('comorbidities');
+  score += Math.min(comorbs.length * 4, 20);
+
+  // Social factors
+  const social = getActiveChips('social');
+  score += Math.min(social.length * 5, 20);
+
+  // Adherence
+  const adh = { high:0, medium:8, low:16, unknown:6 };
+  score += adh[document.getElementById('adherence').value] || 0;
+
+  // Follow-up
+  const fu = { yes_7:0, yes_30:5, no:14, unknown:8 };
+  score += fu[document.getElementById('followup').value] || 0;
+
+  return Math.min(Math.round(score), 100);
+}
+
+function getFactors() {
+  const age = +document.getElementById('age').value;
+  const los = +document.getElementById('los').value;
+  const prior = +document.getElementById('prior').value;
+  const comorbs = getActiveChips('comorbidities').length;
+  const social = getActiveChips('social').length;
+  const adh = { high:5, medium:45, low:90, unknown:35 };
+  const fu = { yes_7:2, yes_30:28, no:90, unknown:50 };
+
+  return [
+    { name: 'Prior Admissions', val: Math.min(prior * 10, 100), label: `${prior} in past year`, color: prior >= 3 ? '#ef4444' : prior >= 1 ? '#f59e0b' : '#10b981' },
+    { name: 'Length of Stay', val: Math.min(los * 5, 100), label: `${los} days`, color: los >= 14 ? '#ef4444' : los >= 7 ? '#f59e0b' : '#10b981' },
+    { name: 'Comorbidity Burden', val: Math.min(comorbs * 14, 100), label: `${comorbs} conditions`, color: comorbs >= 5 ? '#ef4444' : comorbs >= 2 ? '#f59e0b' : '#10b981' },
+    { name: 'Social Risk Factors', val: Math.min(social * 22, 100), label: `${social} factors`, color: social >= 3 ? '#ef4444' : social >= 1 ? '#f59e0b' : '#10b981' },
+    { name: 'Medication Adherence', val: adh[document.getElementById('adherence').value], label: document.getElementById('adherence').selectedOptions[0].text, color: adh[document.getElementById('adherence').value] > 60 ? '#ef4444' : '#10b981' },
+    { name: 'Follow-up Appointment', val: fu[document.getElementById('followup').value], label: document.getElementById('followup').selectedOptions[0].text, color: fu[document.getElementById('followup').value] > 50 ? '#ef4444' : '#10b981' },
+    { name: 'Age', val: Math.min(age, 100), label: `${age} years`, color: age >= 80 ? '#ef4444' : age >= 65 ? '#f59e0b' : '#10b981' },
+  ];
+}
+
+function getRecommendations(score) {
+  const recs = [];
+  const los = +document.getElementById('los').value;
+  const prior = +document.getElementById('prior').value;
+  const fu = document.getElementById('followup').value;
+  const adh = document.getElementById('adherence').value;
+  const social = getActiveChips('social');
+  const comorbs = getActiveChips('comorbidities');
+  const disp = document.getElementById('disposition').value;
+
+  if (fu === 'no' || fu === 'unknown')
+    recs.push({ icon: '📅', text: 'Schedule a follow-up appointment within 7 days of discharge to reduce readmission risk.' });
+  if (adh === 'low' || adh === 'medium')
+    recs.push({ icon: '💊', text: 'Enroll patient in medication adherence program; provide pill organizer and pharmacy blister packs.' });
+  if (prior >= 2)
+    recs.push({ icon: '🔁', text: 'High prior admission count detected. Flag for complex care management and case coordination.' });
+  if (social.includes('lives_alone'))
+    recs.push({ icon: '🏠', text: 'Patient lives alone — consider home health aide visit within 48 hours of discharge.' });
+  if (social.includes('transport'))
+    recs.push({ icon: '🚗', text: 'Coordinate medical transportation to follow-up appointments; connect with community transport services.' });
+  if (social.includes('food'))
+    recs.push({ icon: '🥗', text: 'Refer to food assistance program (Meals on Wheels or food bank) to support recovery and medication efficacy.' });
+  if (comorbs.includes('depression'))
+    recs.push({ icon: '🧠', text: 'Screen for depressive symptoms; coordinate with behavioral health for post-discharge support.' });
+  if (disp === 'ama')
+    recs.push({ icon: '⚠️', text: 'Left against medical advice — initiate outreach call within 24 hours and re-assess care goals.' });
+  if (los >= 10)
+    recs.push({ icon: '🏥', text: 'Extended LOS noted. Arrange transitional care nurse for first 30 days post-discharge.' });
+  if (score >= 70)
+    recs.push({ icon: '🚨', text: 'HIGH RISK: Activate intensive care transition protocol and assign dedicated transition navigator.' });
+  if (score >= 50 && score < 70)
+    recs.push({ icon: '📞', text: 'MODERATE RISK: Schedule nurse phone check-in at 72 hours and 7 days post-discharge.' });
+  if (recs.length === 0)
+    recs.push({ icon: '✅', text: 'Risk appears low. Standard discharge instructions and routine 30-day follow-up recommended.' });
+
+  return recs.slice(0, 5);
+}
+
+// ─── RENDER RESULTS ───
+function renderRisk(score) {
+  // Score text
+  const el = document.getElementById('riskScore');
+  let current = 0;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient Readmission Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1e3a5f;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --accent3: #10b981;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --font-head: 'DM Serif Display', serif;
+      --font-body: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── BG GRID ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: relative;
+      padding: 48px 60px 36px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+    .logo-group { display: flex; align-items: center; gap: 16px; }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-radius: 14px;
+      display: grid; place-items: center;
+      font-size: 26px;
+    }
+    .logo-text h1 {
+      font-family: var(--font-head);
+      font-size: 1.8rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo-text p { font-size: 0.78rem; color: var(--muted); font-family: var(--font-mono); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+    .header-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,229,255,0.06);
+      border: 1px solid rgba(0,229,255,0.2);
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 0.76rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+    .pulse { width: 8px; height: 8px; background: var(--accent3); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+    /* ─── LAYOUT ─── */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px 60px 80px;
+      position: relative; z-index: 10;
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 32px;
+      margin-top: 8px;
+    }
+
+    /* ─── SECTION TITLE ─── */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 30px;
+      transition: border-color .3s;
+    }
+    .card:hover { border-color: rgba(0,229,255,0.25); }
+
+    /* ─── FORM ─── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group.full { grid-column: 1/-1; }
+    label {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    input, select, textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color .25s, box-shadow .25s;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+    }
+    select option { background: var(--surface2); }
+
+    /* ─── RANGE SLIDER ─── */
+    .range-wrap { display: flex; align-items: center; gap: 14px; }
+    input[type="range"] {
+      flex:1; height: 4px; padding:0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .range-val {
+      min-width: 44px;
+      text-align: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    /* ─── TOGGLE CHIPS ─── */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      padding: 7px 16px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all .2s;
+      user-select: none;
+    }
+    .chip.active {
+      border-color: var(--accent2);
+      background: rgba(124,58,237,0.18);
+      color: #c4b5fd;
+    }
+
+    /* ─── PREDICT BUTTON ─── */
+    .btn-predict {
+      width: 100%;
+      margin-top: 24px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(124,58,237,0.4); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict .shimmer {
+      position: absolute; top:0; left:-60%;
+      width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer { to{left:120%} }
+    .btn-predict.loading { opacity: .7; cursor: not-allowed; }
+
+    /* ─── RIGHT PANEL ─── */
+    .result-panel { display: flex; flex-direction: column; gap: 24px; }
+
+    /* ─── RISK METER ─── */
+    .risk-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .risk-card::before {
+      content:'';
+      position:absolute;
+      top:-80px; left:50%; transform:translateX(-50%);
+      width:260px; height:260px;
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(0,229,255,0.06), transparent 70%);
+      pointer-events:none;
+    }
+    .risk-label { font-family: var(--font-mono); font-size:.72rem; color:var(--muted); letter-spacing:3px; text-transform:uppercase; }
+    .risk-score {
+      font-family: var(--font-head);
+      font-size: 5rem;
+      line-height: 1;
+      margin: 14px 0 8px;
+      transition: all .6s ease;
+    }
+    .risk-tier {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      font-weight: 500;
+    }
+    .tier-low  { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--accent3); }
+    .tier-med  { background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:var(--warn); }
+    .tier-high { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+
+    /* Arc meter */
+    .arc-wrap { position: relative; width: 200px; height: 110px; margin: 0 auto 16px; }
+    .arc-wrap svg { overflow: visible; }
+    #arc-fill { transition: stroke-dashoffset .8s cubic-bezier(.4,0,.2,1), stroke .5s; }
+
+    /* ─── GAUGE BARS ─── */
+    .factor-list { display: flex; flex-direction: column; gap: 14px; }
+    .factor {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .factor-head { display: flex; justify-content: space-between; align-items: center; }
+    .factor-name { font-size: .82rem; color: var(--text); }
+    .factor-val  { font-size: .78rem; font-family: var(--font-mono); color: var(--muted); }
+    .bar-track {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      width: 0;
+      transition: width .8s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ─── RECOMMENDATIONS ─── */
+    .rec-list { display: flex; flex-direction: column; gap: 10px; }
+    .rec-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: .84rem;
+      line-height: 1.5;
+      animation: fadeUp .4s ease both;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+    .rec-icon { font-size: 1.1rem; flex-shrink:0; margin-top:1px; }
+
+    /* ─── HISTORY TABLE ─── */
+    .history-wrap { overflow-x: auto; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(30,58,95,.4);
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(0,229,255,.03); }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: .72rem;
+      font-family: var(--font-mono);
+    }
+
+    /* ─── EMPTY STATE ─── */
+    .empty {
+      text-align:center;
+      padding: 48px 20px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .empty .icon { font-size: 2.5rem; margin-bottom: 12px; opacity: .4; }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: .85rem;
+      z-index: 999;
+      display: flex; align-items: center; gap: 10px;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    .toast.show { transform: none; opacity: 1; }
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width:900px){
+      header { padding:28px 24px 24px; flex-direction:column; gap:16px; }
+      .container { padding:28px 20px 60px; }
+      .grid-main { grid-template-columns:1fr; }
+      .form-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-group">
+    <div class="logo-icon">🫀</div>
+    <div class="logo-text">
+      <h1>ReadmitRisk</h1>
+      <p>Patient Readmission Intelligence</p>
+    </div>
+  </div>
+  <div class="header-badge">
+    <span class="pulse"></span> Clinical Decision Support · v2.4
+  </div>
+</header>
+
+<div class="container">
+  <div class="grid-main">
+
+    <!-- LEFT: FORM -->
+    <div>
+      <div class="section-label">Patient Profile</div>
+      <div class="card">
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Patient ID</label>
+            <input type="text" id="pid" placeholder="e.g. PT-20480" />
+          </div>
+
+          <div class="form-group">
+            <label>Age</label>
+            <div class="range-wrap">
+              <input type="range" id="age" min="1" max="100" value="55" oninput="document.getElementById('age-val').textContent=this.value"/>
+              <span class="range-val" id="age-val">55</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Gender</label>
+            <select id="gender">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other / Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Primary Diagnosis</label>
+            <select id="diagnosis">
+              <option value="heart_failure">Heart Failure</option>
+              <option value="pneumonia">Pneumonia</option>
+              <option value="copd">COPD</option>
+              <option value="diabetes">Diabetes</option>
+              <option value="stroke">Stroke</option>
+              <option value="sepsis">Sepsis</option>
+              <option value="hip_fracture">Hip Fracture</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Length of Stay (days)</label>
+            <div class="range-wrap">
+              <input type="range" id="los" min="1" max="60" value="5" oninput="document.getElementById('los-val').textContent=this.value"/>
+              <span class="range-val" id="los-val">5</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Prior Admissions (12 months)</label>
+            <div class="range-wrap">
+              <input type="range" id="prior" min="0" max="10" value="1" oninput="document.getElementById('prior-val').textContent=this.value"/>
+              <span class="range-val" id="prior-val">1</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Discharge Disposition</label>
+            <select id="disposition">
+              <option value="home">Home</option>
+              <option value="home_health">Home w/ Health Services</option>
+              <option value="snf">Skilled Nursing Facility</option>
+              <option value="rehab">Inpatient Rehab</option>
+              <option value="ltc">Long-Term Care</option>
+              <option value="ama">AMA / Left Against Advice</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Insurance Type</label>
+            <select id="insurance">
+              <option value="medicare">Medicare</option>
+              <option value="medicaid">Medicaid</option>
+              <option value="private">Private / Commercial</option>
+              <option value="uninsured">Uninsured</option>
+            </select>
+          </div>
+
+          <div class="form-group full">
+            <label>Comorbidities (select all that apply)</label>
+            <div class="chip-group" id="comorbidities">
+              <span class="chip" data-val="hypertension">Hypertension</span>
+              <span class="chip" data-val="diabetes">Diabetes</span>
+              <span class="chip" data-val="ckd">CKD</span>
+              <span class="chip" data-val="chf">CHF</span>
+              <span class="chip" data-val="afib">A-Fib</span>
+              <span class="chip" data-val="obesity">Obesity</span>
+              <span class="chip" data-val="depression">Depression</span>
+              <span class="chip" data-val="cancer">Cancer</span>
+              <span class="chip" data-val="liver">Liver Disease</span>
+              <span class="chip" data-val="dementia">Dementia</span>
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label>Social Risk Factors</label>
+            <div class="chip-group" id="social">
+              <span class="chip" data-val="lives_alone">Lives Alone</span>
+              <span class="chip" data-val="low_literacy">Low Health Literacy</span>
+              <span class="chip" data-val="transport">Transportation Issues</span>
+              <span class="chip" data-val="food">Food Insecurity</span>
+              <span class="chip" data-val="homeless">Housing Instability</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Medication Adherence</label>
+            <select id="adherence">
+              <option value="high">High (≥80%)</option>
+              <option value="medium">Medium (50–79%)</option>
+              <option value="low">Low (&lt;50%)</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Follow-up Appt Scheduled?</label>
+            <select id="followup">
+              <option value="yes_7">Yes, within 7 days</option>
+              <option value="yes_30">Yes, 8–30 days</option>
+              <option value="no">No</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+        </div>
+
+        <button class="btn-predict" id="predictBtn" onclick="runPrediction()">
+          <span class="shimmer"></span>
+          ⚡ Run Readmission Prediction
+        </button>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="section-label" style="margin-top:36px">Prediction History</div>
+      <div class="card">
+        <div class="history-wrap">
+          <table id="historyTable">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Diagnosis</th>
+                <th>Risk Score</th>
+                <th>Tier</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="5"><div class="empty"><div class="icon">📋</div>No predictions yet</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div class="result-panel">
+
+      <!-- RISK METER -->
+      <div class="section-label">Risk Assessment</div>
+      <div class="risk-card">
+        <div class="risk-label">30-Day Readmission Risk</div>
+
+        <!-- Arc SVG -->
+        <div class="arc-wrap">
+          <svg viewBox="0 0 200 110" width="200" height="110">
+            <defs>
+              <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#10b981"/>
+                <stop offset="50%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#ef4444"/>
+              </linearGradient>
+            </defs>
+            <!-- Track -->
+            <path d="M 15 105 A 85 85 0 0 1 185 105"
+              fill="none" stroke="#1a2236" stroke-width="14" stroke-linecap="round"/>
+            <!-- Fill -->
+            <path id="arc-fill"
+              d="M 15 105 A 85 85 0 0 1 185 105"
+              fill="none" stroke="url(#arcGrad)" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="267" stroke-dashoffset="267"/>
+            <!-- Needle -->
+            <line id="needle" x1="100" y1="105" x2="100" y2="30"
+              stroke="white" stroke-width="2.5" stroke-linecap="round"
+              transform="rotate(0 100 105)" style="transition: transform .8s cubic-bezier(.4,0,.2,1)"/>
+            <circle cx="100" cy="105" r="6" fill="white"/>
+          </svg>
+        </div>
+
+        <div class="risk-score" id="riskScore">—</div>
+        <div id="riskTier" class="risk-tier tier-low" style="visibility:hidden">● Low Risk</div>
+      </div>
+
+      <!-- FACTOR BREAKDOWN -->
+      <div class="card">
+        <div class="section-label" style="margin-bottom:18px">Risk Factor Breakdown</div>
+        <div class="factor-list" id="factorList">
+          <div class="empty"><div class="icon">📊</div>Submit a patient profile to see factors</div>
+        </div>
+      </div>
+
+      <!-- RECOMMENDATIONS -->
+      <div class="card">
+        <div class="section-label" style="margin-bottom:18px">Clinical Recommendations</div>
+        <div class="rec-list" id="recList">
+          <div class="empty"><div class="icon">💡</div>Recommendations will appear here</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✅ Prediction complete</div>
+
+<script>
+// ─── CHIP TOGGLE ───
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', () => c.classList.toggle('active'));
+});
+
+// ─── HELPERS ───
+function getActiveChips(groupId) {
+  return [...document.querySelectorAll(`#${groupId} .chip.active`)].map(c => c.dataset.val);
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── PREDICTION ENGINE ───
+function computeRisk() {
+  let score = 0;
+
+  // Age
+  const age = +document.getElementById('age').value;
+  if (age >= 80) score += 18;
+  else if (age >= 65) score += 12;
+  else if (age >= 50) score += 6;
+
+  // Diagnosis
+  const dx = { heart_failure:20, sepsis:18, copd:15, pneumonia:14, diabetes:10, stroke:13, hip_fracture:11, other:5 };
+  score += dx[document.getElementById('diagnosis').value] || 5;
+
+  // LOS
+  const los = +document.getElementById('los').value;
+  if (los >= 14) score += 16;
+  else if (los >= 7) score += 10;
+  else if (los >= 3) score += 5;
+
+  // Prior admissions
+  const prior = +document.getElementById('prior').value;
+  score += Math.min(prior * 6, 24);
+
+  // Disposition
+  const disp = { ama:18, home:2, home_health:6, snf:10, rehab:8, ltc:12 };
+  score += disp[document.getElementById('disposition').value] || 2;
+
+  // Insurance
+  const ins = { uninsured:10, medicaid:8, medicare:4, private:1 };
+  score += ins[document.getElementById('insurance').value] || 1;
+
+  // Comorbidities
+  const comorbs = getActiveChips('comorbidities');
+  score += Math.min(comorbs.length * 4, 20);
+
+  // Social factors
+  const social = getActiveChips('social');
+  score += Math.min(social.length * 5, 20);
+
+  // Adherence
+  const adh = { high:0, medium:8, low:16, unknown:6 };
+  score += adh[document.getElementById('adherence').value] || 0;
+
+  // Follow-up
+  const fu = { yes_7:0, yes_30:5, no:14, unknown:8 };
+  score += fu[document.getElementById('followup').value] || 0;
+
+  return Math.min(Math.round(score), 100);
+}
+
+function getFactors() {
+  const age = +document.getElementById('age').value;
+  const los = +document.getElementById('los').value;
+  const prior = +document.getElementById('prior').value;
+  const comorbs = getActiveChips('comorbidities').length;
+  const social = getActiveChips('social').length;
+  const adh = { high:5, medium:45, low:90, unknown:35 };
+  const fu = { yes_7:2, yes_30:28, no:90, unknown:50 };
+
+  return [
+    { name: 'Prior Admissions', val: Math.min(prior * 10, 100), label: `${prior} in past year`, color: prior >= 3 ? '#ef4444' : prior >= 1 ? '#f59e0b' : '#10b981' },
+    { name: 'Length of Stay', val: Math.min(los * 5, 100), label: `${los} days`, color: los >= 14 ? '#ef4444' : los >= 7 ? '#f59e0b' : '#10b981' },
+    { name: 'Comorbidity Burden', val: Math.min(comorbs * 14, 100), label: `${comorbs} conditions`, color: comorbs >= 5 ? '#ef4444' : comorbs >= 2 ? '#f59e0b' : '#10b981' },
+    { name: 'Social Risk Factors', val: Math.min(social * 22, 100), label: `${social} factors`, color: social >= 3 ? '#ef4444' : social >= 1 ? '#f59e0b' : '#10b981' },
+    { name: 'Medication Adherence', val: adh[document.getElementById('adherence').value], label: document.getElementById('adherence').selectedOptions[0].text, color: adh[document.getElementById('adherence').value] > 60 ? '#ef4444' : '#10b981' },
+    { name: 'Follow-up Appointment', val: fu[document.getElementById('followup').value], label: document.getElementById('followup').selectedOptions[0].text, color: fu[document.getElementById('followup').value] > 50 ? '#ef4444' : '#10b981' },
+    { name: 'Age', val: Math.min(age, 100), label: `${age} years`, color: age >= 80 ? '#ef4444' : age >= 65 ? '#f59e0b' : '#10b981' },
+  ];
+}
+
+function getRecommendations(score) {
+  const recs = [];
+  const los = +document.getElementById('los').value;
+  const prior = +document.getElementById('prior').value;
+  const fu = document.getElementById('followup').value;
+  const adh = document.getElementById('adherence').value;
+  const social = getActiveChips('social');
+  const comorbs = getActiveChips('comorbidities');
+  const disp = document.getElementById('disposition').value;
+
+  if (fu === 'no' || fu === 'unknown')
+    recs.push({ icon: '📅', text: 'Schedule a follow-up appointment within 7 days of discharge to reduce readmission risk.' });
+  if (adh === 'low' || adh === 'medium')
+    recs.push({ icon: '💊', text: 'Enroll patient in medication adherence program; provide pill organizer and pharmacy blister packs.' });
+  if (prior >= 2)
+    recs.push({ icon: '🔁', text: 'High prior admission count detected. Flag for complex care management and case coordination.' });
+  if (social.includes('lives_alone'))
+    recs.push({ icon: '🏠', text: 'Patient lives alone — consider home health aide visit within 48 hours of discharge.' });
+  if (social.includes('transport'))
+    recs.push({ icon: '🚗', text: 'Coordinate medical transportation to follow-up appointments; connect with community transport services.' });
+  if (social.includes('food'))
+    recs.push({ icon: '🥗', text: 'Refer to food assistance program (Meals on Wheels or food bank) to support recovery and medication efficacy.' });
+  if (comorbs.includes('depression'))
+    recs.push({ icon: '🧠', text: 'Screen for depressive symptoms; coordinate with behavioral health for post-discharge support.' });
+  if (disp === 'ama')
+    recs.push({ icon: '⚠️', text: 'Left against medical advice — initiate outreach call within 24 hours and re-assess care goals.' });
+  if (los >= 10)
+    recs.push({ icon: '🏥', text: 'Extended LOS noted. Arrange transitional care nurse for first 30 days post-discharge.' });
+  if (score >= 70)
+    recs.push({ icon: '🚨', text: 'HIGH RISK: Activate intensive care transition protocol and assign dedicated transition navigator.' });
+  if (score >= 50 && score < 70)
+    recs.push({ icon: '📞', text: 'MODERATE RISK: Schedule nurse phone check-in at 72 hours and 7 days post-discharge.' });
+  if (recs.length === 0)
+    recs.push({ icon: '✅', text: 'Risk appears low. Standard discharge instructions and routine 30-day follow-up recommended.' });
+
+  return recs.slice(0, 5);
+}
+
+// ─── RENDER RESULTS ───
+function renderRisk(score) {
+  // Score text
+  const el = document.getElementById('riskScore');<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient Readmission Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1e3a5f;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --accent3: #10b981;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --font-head: 'DM Serif Display', serif;
+      --font-body: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── BG GRID ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: relative;
+      padding: 48px 60px 36px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+    .logo-group { display: flex; align-items: center; gap: 16px; }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-radius: 14px;
+      display: grid; place-items: center;
+      font-size: 26px;
+    }
+    .logo-text h1 {
+      font-family: var(--font-head);
+      font-size: 1.8rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo-text p { font-size: 0.78rem; color: var(--muted); font-family: var(--font-mono); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+    .header-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,229,255,0.06);
+      border: 1px solid rgba(0,229,255,0.2);
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 0.76rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+    .pulse { width: 8px; height: 8px; background: var(--accent3); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+    /* ─── LAYOUT ─── */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px 60px 80px;
+      position: relative; z-index: 10;
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 32px;
+      margin-top: 8px;
+    }
+
+    /* ─── SECTION TITLE ─── */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 30px;
+      transition: border-color .3s;
+    }
+    .card:hover { border-color: rgba(0,229,255,0.25); }
+
+    /* ─── FORM ─── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group.full { grid-column: 1/-1; }
+    label {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    input, select, textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color .25s, box-shadow .25s;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+    }
+    select option { background: var(--surface2); }
+
+    /* ─── RANGE SLIDER ─── */
+    .range-wrap { display: flex; align-items: center; gap: 14px; }
+    input[type="range"] {
+      flex:1; height: 4px; padding:0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .range-val {
+      min-width: 44px;
+      text-align: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    /* ─── TOGGLE CHIPS ─── */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      padding: 7px 16px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all .2s;
+      user-select: none;
+    }
+    .chip.active {
+      border-color: var(--accent2);
+      background: rgba(124,58,237,0.18);
+      color: #c4b5fd;
+    }
+
+    /* ─── PREDICT BUTTON ─── */
+    .btn-predict {
+      width: 100%;
+      margin-top: 24px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(124,58,237,0.4); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict .shimmer {
+      position: absolute; top:0; left:-60%;
+      width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer { to{left:120%} }
+    .btn-predict.loading { opacity: .7; cursor: not-allowed; }
+
+    /* ─── RIGHT PANEL ─── */
+    .result-panel { display: flex; flex-direction: column; gap: 24px; }
+
+    /* ─── RISK METER ─── */
+    .risk-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .risk-card::before {
+      content:'';
+      position:absolute;
+      top:-80px; left:50%; transform:translateX(-50%);
+      width:260px; height:260px;
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(0,229,255,0.06), transparent 70%);
+      pointer-events:none;
+    }
+    .risk-label { font-family: var(--font-mono); font-size:.72rem; color:var(--muted); letter-spacing:3px; text-transform:uppercase; }
+    .risk-score {
+      font-family: var(--font-head);
+      font-size: 5rem;
+      line-height: 1;
+      margin: 14px 0 8px;
+      transition: all .6s ease;
+    }
+    .risk-tier {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      font-weight: 500;
+    }
+    .tier-low  { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--accent3); }
+    .tier-med  { background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:var(--warn); }
+    .tier-high { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+
+    /* Arc meter */
+    .arc-wrap { position: relative; width: 200px; height: 110px; margin: 0 auto 16px; }
+    .arc-wrap svg { overflow: visible; }
+    #arc-fill { transition: stroke-dashoffset .8s cubic-bezier(.4,0,.2,1), stroke .5s; }
+
+    /* ─── GAUGE BARS ─── */
+    .factor-list { display: flex; flex-direction: column; gap: 14px; }
+    .factor {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .factor-head { display: flex; justify-content: space-between; align-items: center; }
+    .factor-name { font-size: .82rem; color: var(--text); }
+    .factor-val  { font-size: .78rem; font-family: var(--font-mono); color: var(--muted); }
+    .bar-track {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      width: 0;
+      transition: width .8s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ─── RECOMMENDATIONS ─── */
+    .rec-list { display: flex; flex-direction: column; gap: 10px; }
+    .rec-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: .84rem;
+      line-height: 1.5;
+      animation: fadeUp .4s ease both;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+    .rec-icon { font-size: 1.1rem; flex-shrink:0; margin-top:1px; }
+
+    /* ─── HISTORY TABLE ─── */
+    .history-wrap { overflow-x: auto; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(30,58,95,.4);
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(0,229,255,.03); }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: .72rem;
+      font-family: var(--font-mono);
+    }
+
+    /* ─── EMPTY STATE ─── */
+    .empty {
+      text-align:center;
+      padding: 48px 20px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .empty .icon { font-size: 2.5rem; margin-bottom: 12px; opacity: .4; }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: .85rem;
+      z-index: 999;
+      display: flex; align-items: center; gap: 10px;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    .toast.show { transform: none; opacity: 1; }
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width:900px){
+      header { padding:28px 24px 24px; flex-direction:column; gap:16px; }
+      .container { padding:28px 20px 60px; }
+      .grid-main { grid-template-columns:1fr; }
+      .form-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-group">
+    <div class="logo-icon">🫀</div>
+    <div class="logo-text">
+      <h1>ReadmitRisk</h1>
+      <p>Patient Readmission Intelligence</p>
+    </div>
+  </div>
+  <div class="header-badge">
+    <span class="pulse"></span> Clinical Decision Support · v2.4
+  </div>
+</header>
+
+<div class="container">
+  <div class="grid-main">
+
+    <!-- LEFT: FORM -->
+    <div>
+      <div class="section-label">Patient Profile</div>
+      <div class="card">
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Patient ID</label>
+            <input type="text" id="pid" placeholder="e.g. PT-20480" />
+          </div>
+
+          <div class="form-group">
+            <label>Age</label>
+            <div class="range-wrap">
+              <input type="range" id="age" min="1" max="100" value="55" oninput="document.getElementById('age-val').textContent=this.value"/>
+              <span class="range-val" id="age-val">55</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Gender</label>
+            <select id="gender">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other / Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Primary Diagnosis</label>
+            <select id="diagnosis">
+              <option value="heart_failure">Heart Failure</option>
+              <option value="pneumonia">Pneumonia</option>
+              <option value="copd">COPD</option>
+              <option value="diabetes">Diabetes</option>
+              <option value="stroke">Stroke</option>
+              <option value="sepsis">Sepsis</option>
+              <option value="hip_fracture">Hip Fracture</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Length of Stay (days)</label>
+            <div class="range-wrap">
+              <input type="range" id="los" min="1" max="60" value="5" oninput="document.getElementById('los-val').textContent=this.value"/>
+              <span class="range-val" id="los-val">5</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Prior Admissions (12 months)</label>
+            <div class="range-wrap">
+              <input type="range" id="prior" min="0" max="10" value="1" oninput="document.getElementById('prior-val').textContent=this.value"/>
+              <span class="range-val" id="prior-val">1</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Discharge Disposition</label>
+            <select id="disposition">
+              <option value="home">Home</option>
+              <option value="home_health">Home w/ Health Services</option>
+              <option value="snf">Skilled Nursing Facility</option>
+              <option value="rehab">Inpatient Rehab</option>
+              <option value="ltc">Long-Term Care</option>
+              <option value="ama">AMA / Left Against Advice</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Insurance Type</label>
+            <select id="insurance">
+              <option value="medicare">Medicare</option>
+              <option value="medicaid">Medicaid</option>
+              <option value="private">Private / Commercial</option>
+              <option value="uninsured">Uninsured</option>
+            </select>
+          </div>
+
+          <div class="form-group full">
+            <label>Comorbidities (select all that apply)</label>
+            <div class="chip-group" id="comorbidities">
+              <span class="chip" data-val="hypertension">Hypertension</span>
+              <span class="chip" data-val="diabetes">Diabetes</span>
+              <span class="chip" data-val="ckd">CKD</span>
+              <span class="chip" data-val="chf">CHF</span>
+              <span class="chip" data-val="afib">A-Fib</span>
+              <span class="chip" data-val="obesity">Obesity</span>
+              <span class="chip" data-val="depression">Depression</span>
+              <span class="chip" data-val="cancer">Cancer</span>
+              <span class="chip" data-val="liver">Liver Disease</span>
+              <span class="chip" data-val="dementia">Dementia</span>
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label>Social Risk Factors</label>
+            <div class="chip-group" id="social">
+              <span class="chip" data-val="lives_alone">Lives Alone</span>
+              <span class="chip" data-val="low_literacy">Low Health Literacy</span>
+              <span class="chip" data-val="transport">Transportation Issues</span>
+              <span class="chip" data-val="food">Food Insecurity</span>
+              <span class="chip" data-val="homeless">Housing Instability</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Medication Adherence</label>
+            <select id="adherence">
+              <option value="high">High (≥80%)</option>
+              <option value="medium">Medium (50–79%)</option>
+              <option value="low">Low (&lt;50%)</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Follow-up Appt Scheduled?</label>
+            <select id="followup">
+              <option value="yes_7">Yes, within 7 days</option>
+              <option value="yes_30">Yes, 8–30 days</option>
+              <option value="no">No</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+        </div>
+
+        <button class="btn-predict" id="predictBtn" onclick="runPrediction()">
+          <span class="shimmer"></span>
+          ⚡ Run Readmission Prediction
+        </button>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="section-label" style="margin-top:36px">Prediction History</div>
+      <div class="card">
+        <div class="history-wrap">
+          <table id="historyTable">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Diagnosis</th>
+                <th>Risk Score</th>
+                <th>Tier</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="5"><div class="empty"><div class="icon">📋</div>No predictions yet</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div class="result-panel">
+
+      <!-- RISK METER -->
+      <div class="section-label">Risk Assessment</div>
+      <div class="risk-card">
+        <div class="risk-label">30-Day Readmission Risk</div>
+
+        <!-- Arc SVG -->
+        <div class="arc-wrap">
+          <svg viewBox="0 0 200 110" width="200" height="110">
+            <defs>
+              <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#10b981"/>
+                <stop offset="50%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#ef4444"/>
+              </linearGradient>
+            </defs>
+            <!-- Track -->
+            <path d="M 15 105 A 85 85 0 0 1 185 105"
+              fill="none" stroke="#1a2236" stroke-width="14" stroke-linecap="round"/>
+            <!-- Fill -->
+            <path id="arc-fill"
+              d="M 15 105 A 85 85 0 0 1 185 105"
+              fill="none" stroke="url(#arcGrad)" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="267" stroke-dashoffset="267"/>
+            <!-- Needle -->
+            <line id="needle" x1="100" y1="105" x2="100" y2="30"
+              stroke="white" stroke-width="2.5" stroke-linecap="round"
+              transform="rotate(0 100 105)" style="transition: transform .8s cubic-bezier(.4,0,.2,1)"/>
+            <circle cx="100" cy="105" r="6" fill="white"/>
+          </svg>
+        </div>
+
+        <div class="risk-score" id="riskScore">—</div>
+        <div id="riskTier" class="risk-tier tier-low" style="visibility:hidden">● Low Risk</div>
+      </div>
+
+      <!-- FACTOR BREAKDOWN -->
+      <div class="card">
+        <div class="section-label" style="margin-bottom:18px">Risk Factor Breakdown</div>
+        <div class="factor-list" id="factorList">
+          <div class="empty"><div class="icon">📊</div>Submit a patient profile to see factors</div>
+        </div>
+      </div>
+
+      <!-- RECOMMENDATIONS -->
+      <div class="card">
+        <div class="section-label" style="margin-bottom:18px">Clinical Recommendations</div>
+        <div class="rec-list" id="recList">
+          <div class="empty"><div class="icon">💡</div>Recommendations will appear here</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✅ Prediction complete</div>
+
+<script>
+// ─── CHIP TOGGLE ───
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', () => c.classList.toggle('active'));
+});
+
+// ─── HELPERS ───
+function getActiveChips(groupId) {
+  return [...document.querySelectorAll(`#${groupId} .chip.active`)].map(c => c.dataset.val);
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── PREDICTION ENGINE ───
+function computeRisk() {
+  let score = 0;
+
+  // Age
+  const age = +document.getElementById('age').value;
+  if (age >= 80) score += 18;
+  else if (age >= 65) score += 12;
+  else if (age >= 50) score += 6;
+
+  // Diagnosis
+  const dx = { heart_failure:20, sepsis:18, copd:15, pneumonia:14, diabetes:10, stroke:13, hip_fracture:11, other:5 };
+  score += dx[document.getElementById('diagnosis').value] || 5;
+
+  // LOS
+  const los = +document.getElementById('los').value;
+  if (los >= 14) score += 16;
+  else if (los >= 7) score += 10;
+  else if (los >= 3) score += 5;
+
+  // Prior admissions
+  const prior = +document.getElementById('prior').value;
+  score += Math.min(prior * 6, 24);
+
+  // Disposition
+  const disp = { ama:18, home:2, home_health:6, snf:10, rehab:8, ltc:12 };
+  score += disp[document.getElementById('disposition').value] || 2;
+
+  // Insurance
+  const ins = { uninsured:10, medicaid:8, medicare:4, private:1 };
+  score += ins[document.getElementById('insurance').value] || 1;
+
+  // Comorbidities
+  const comorbs = getActiveChips('comorbidities');
+  score += Math.min(comorbs.length * 4, 20);
+
+  // Social factors
+  const social = getActiveChips('social');
+  score += Math.min(social.length * 5, 20);
+
+  // Adherence
+  const adh = { high:0, medium:8, low:16, unknown:6 };
+  score += adh[document.getElementById('adherence').value] || 0;
+
+  // Follow-up
+  const fu = { yes_7:0, yes_30:5, no:14, unknown:8 };
+  score += fu[document.getElementById('followup').value] || 0;
+
+  return Math.min(Math.round(score), 100);
+}
+
+function getFactors() {
+  const age = +document.getElementById('age').value;
+  const los = +document.getElementById('los').value;
+  const prior = +document.getElementById('prior').value;
+  const comorbs = getActiveChips('comorbidities').length;
+  const social = getActiveChips('social').length;
+  const adh = { high:5, medium:45, low:90, unknown:35 };
+  const fu = { yes_7:2, yes_30:28, no:90, unknown:50 };
+
+  return [
+    { name: 'Prior Admissions', val: Math.min(prior * 10, 100), label: `${prior} in past year`, color: prior >= 3 ? '#ef4444' : prior >= 1 ? '#f59e0b' : '#10b981' },
+    { name: 'Length of Stay', val: Math.min(los * 5, 100), label: `${los} days`, color: los >= 14 ? '#ef4444' : los >= 7 ? '#f59e0b' : '#10b981' },
+    { name: 'Comorbidity Burden', val: Math.min(comorbs * 14, 100), label: `${comorbs} conditions`, color: comorbs >= 5 ? '#ef4444' : comorbs >= 2 ? '#f59e0b' : '#10b981' },
+    { name: 'Social Risk Factors', val: Math.min(social * 22, 100), label: `${social} factors`, color: social >= 3 ? '#ef4444' : social >= 1 ? '#f59e0b' : '#10b981' },
+    { name: 'Medication Adherence', val: adh[document.getElementById('adherence').value], label: document.getElementById('adherence').selectedOptions[0].text, color: adh[document.getElementById('adherence').value] > 60 ? '#ef4444' : '#10b981' },
+    { name: 'Follow-up Appointment', val: fu[document.getElementById('followup').value], label: document.getElementById('followup').selectedOptions[0].text, color: fu[document.getElementById('followup').value] > 50 ? '#ef4444' : '#10b981' },
+    { name: 'Age', val: Math.min(age, 100), label: `${age} years`, color: age >= 80 ? '#ef4444' : age >= 65 ? '#f59e0b' : '#10b981' },
+  ];
+}
+
+function getRecommendations(score) {
+  const recs = [];
+  const los = +document.getElementById('los').value;
+  const prior = +document.getElementById('prior').value;
+  const fu = document.getElementById('followup').value;
+  const adh = document.getElementById('adherence').value;
+  const social = getActiveChips('social');
+  const comorbs = getActiveChips('comorbidities');
+  const disp = document.getElementById('disposition').value;
+
+  if (fu === 'no' || fu === 'unknown')
+    recs.push({ icon: '📅', text: 'Schedule a follow-up appointment within 7 days of discharge to reduce readmission risk.' });
+  if (adh === 'low' || adh === 'medium')
+    recs.push({ icon: '💊', text: 'Enroll patient in medication adherence program; provide pill organizer and pharmacy blister packs.' });
+  if (prior >= 2)
+    recs.push({ icon: '🔁', text: 'High prior admission count detected. Flag for complex care management and case coordination.' });
+  if (social.includes('lives_alone'))
+    recs.push({ icon: '🏠', text: 'Patient lives alone — consider home health aide visit within 48 hours of discharge.' });
+  if (social.includes('transport'))
+    recs.push({ icon: '🚗', text: 'Coordinate medical transportation to follow-up appointments; connect with community transport services.' });
+  if (social.includes('food'))
+    recs.push({ icon: '🥗', text: 'Refer to food assistance program (Meals on Wheels or food bank) to support recovery and medication efficacy.' });
+  if (comorbs.includes('depression'))
+    recs.push({ icon: '🧠', text: 'Screen for depressive symptoms; coordinate with behavioral health for post-discharge support.' });
+  if (disp === 'ama')
+    recs.push({ icon: '⚠️', text: 'Left against medical advice — initiate outreach call within 24 hours and re-assess care goals.' });
+  if (los >= 10)
+    recs.push({ icon: '🏥', text: 'Extended LOS noted. Arrange transitional care nurse for first 30 days post-discharge.' });
+  if (score >= 70)
+    recs.push({ icon: '🚨', text: 'HIGH RISK: Activate intensive care transition protocol and assign dedicated transition navigator.' });
+  if (score >= 50 && score < 70)
+    recs.push({ icon: '📞', text: 'MODERATE RISK: Schedule nurse phone check-in at 72 hours and 7 days post-discharge.' });
+  if (recs.length === 0)
+    recs.push({ icon: '✅', text: 'Risk appears low. Standard discharge instructions and routine 30-day follow-up recommended.' });
+
+  return recs.slice(0, 5);
+}
+
+// ─── RENDER RESULTS ───
+function renderRisk(score) {
+  // Score text
+  const el = document.getElementById('riskScore');
+  let current = 0;
+  const interval = setInterval(() => {
+    current = Math.min(current + Math.ceil(score / 30), score);
+    el.textContent = current + '%';
+    if (current >= score) clearInterval(interval);
+  }, 30);
+
+  // Color
+  let color, tierClass, tierText;
+  if (score < 35)       { color='#10b981'; tierClass='tier-low';  tierText='● Low Risk'; }
+  else if (score < 65)  { color='#f59e0b'; tierClass='tier-med';  tierText='● Moderate Risk'; }
+  else                  { color='#ef4444'; tierClass='tier-high'; tierText='● High Risk'; }
+
+  el.style.background = `linear-gradient(90deg, ${color}, white)`;
+  el.style.webkitBackgroundClip = 'text';
+  el.style.webkitTextFillColor = 'transparent';
+
+  const tier = document.getElementById('riskTier');
+  tier.className = 'risk-tier ' + tierClass;
+  tier.textContent = tierText;
+  tier.style.visibility = 'visible';
+
+  // Arc
+  const arcLen = 267;
+  const offset = arcLen - (score / 100) * arcLen;
+  document.getElementById('arc-fill').style.strokeDashoffset = offset;
+
+  // Needle: -90deg (left) to +90deg (right)
+  const needleDeg = -90 + (score / 100) * 180;
+  document.getElementById('needle').setAttribute('transform', `rotate(${needleDeg} 100 105)`);
+}
+
+function renderFactors(factors) {
+  const el = document.getElementById('factorList');
+  el.innerHTML = factors.map(f => `
+    <div class="factor">
+      <div class="factor-head">
+        <span class="factor-name">${f.name}</span>
+        <span class="factor-val">${f.label}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" data-width="${f.val}" style="background:${f.color}"></div>
+      </div>
+    </div>
+  `).join('');
+  // Animate bars
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.bar-fill').forEach(b => {
+      b.style.width = b.dataset.width + '%';
+    });
+  });
+}
+
+function renderRecs(recs) {
+  const el = document.getElementById('recList');
+  el.innerHTML = recs.map((r, i) => `
+    <div class="rec-item" style="animation-delay:${i * 80}ms">
+      <span class="rec-icon">${r.icon}</span>
+      <span>${r.text}</span>
+    </div>
+  `).join('');
+}
+
+function addHistory(score) {
+  const pid = document.getElementById('pid').value || 'N/A';
+  const dx = document.getElementById('diagnosis').selectedOptions[0].text;
+  const tierClass = score < 35 ? 'tier-low' : score < 65 ? 'tier-med' : 'tier-high';
+  const tierText = score < 35 ? 'Low' : score < 65 ? 'Moderate' : 'High';
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const tbody = document.getElementById('historyBody');
+  if (tbody.querySelector('.empty')) tbody.innerHTML = '';
+
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>${pid}</td>
+    <td>${dx}</td>
+    <td style="font-family:var(--font-mono);font-weight:600">${score}%</td>
+    <td><span class="badge ${tierClass}">${tierText}</span></td>
+    <td style="color:var(--muted)">${time}</td>
+  `;
+  tbody.prepend(row);
+}
+
+// ─── MAIN ───
+async function runPrediction() {
+  const btn = document.getElementById('predictBtn');
+  btn.classList.add('loading');
+  btn.textContent = '⏳ Analyzing...';
+
+  // Simulate processing delay for UX
+  await new Promise(r => setTimeout(r, 900));
+
+  const score = computeRisk();
+  const factors = getFactors();
+  const recs = getRecommendations(score);
+
+  renderRisk(score);
+  renderFactors(factors);
+  renderRecs(recs);
+  addHistory(score);
+  showToast('✅ Prediction complete — ' + score + '% risk score');
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<span class="shimmer"></span>⚡ Run Readmission Prediction';
+}
+</script>
 </body>
 </html>
